@@ -162,6 +162,7 @@ export default class API extends Module {
         };
 
         if (Date.now() - (rateLimit.lastRequestDate as number) < 1800) {
+            console.log("SETTING RATE LIMIT 1", rateLimit)
             const reqUuid = uuid();
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
@@ -200,6 +201,7 @@ export default class API extends Module {
         }
 
         if (rateLimit.requests.size >= 10) {
+            console.log("SETTING RATE LIMIT 2", rateLimit)
             const reqUuid = uuid();
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
@@ -249,6 +251,19 @@ export default class API extends Module {
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
+
+            setTimeout(() => {
+                this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
+
+                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
+
+                if (newLastRequest) {
+                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
+                } else {
+                    this.rateLimit.delete(IP as string)
+                }
+            }, 7000)
+
         }
 
         next();
