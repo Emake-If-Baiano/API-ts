@@ -159,10 +159,12 @@ export default class API extends Module {
         }
 
         if (rateLimit.endAt) {
+            const date = new Date(rateLimit.endAt);
+
             return res.status(429).send({
                 status: false,
                 error: "Você foi bloqueado de acessar as rotas da API (RATE LIMIT)",
-                endAt: new Date(rateLimit.endAt).toISOString()
+                endAt: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
             })
         };
 
@@ -191,11 +193,14 @@ export default class API extends Module {
                 } else {
                     this.rateLimit.delete(IP as string)
                 }
-            }, 5000);
+            }, 10000);
+
+            const date = new Date(Date.now() + 10000);
 
             return res.status(429).send({
                 status: false,
-                error: "Você foi bloqueado de acessar as rotas da API (RATE LIMIT)"
+                error: "Você foi bloqueado de acessar as rotas da API (RATE LIMIT)",
+                endAt: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
             });
         }
 
