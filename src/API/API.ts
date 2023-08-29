@@ -125,6 +125,7 @@ export default class API extends Module {
         const rateLimit = this.rateLimit.get(IP as string) as RateLimit;
 
         if (!rateLimit) {
+            console.log("SEM RATE LIMIT")
             const reqUuid = uuid();
 
             this.rateLimit.set(IP as string, {
@@ -132,22 +133,21 @@ export default class API extends Module {
                 requests: new Collection<string, RequestData>().set(reqUuid, {
                     req,
                     uuid: reqUuid,
-                    date: Date.now()
+                    date: Date.now(),
+                    timeout: setTimeout(() => {
+                        this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
+
+                        const newLastRequest = this.rateLimit.get(IP as string)?.requests.first()
+
+                        if (newLastRequest) {
+                            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
+                        } else {
+                            this.rateLimit.delete(IP as string)
+                        }
+                    }, 15000)
                 }),
                 lastRequestDate: Date.now()
             });
-
-            setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
-
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
-
-                if (newLastRequest) {
-                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
-                } else {
-                    this.rateLimit.delete(IP as string)
-                }
-            }, 15000)
             return next()
         }
 
@@ -165,31 +165,39 @@ export default class API extends Module {
             console.log("SETTING RATE LIMIT 1", rateLimit)
             const reqUuid = uuid();
 
+            const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
+
+            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
                 uuid: reqUuid,
-                date: Date.now()
+                date: Date.now(),
+                timeout: setTimeout(() => {
+                    const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
+
+                    if (findNow.pos) {
+                        const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
+
+                        if (findPos) {
+                            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = findPos.date;
+                        } else {
+                            this.rateLimit.delete(IP as string)
+                        }
+                    }
+
+                    this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
+
+                    delete (this.rateLimit.get(IP as string) as RateLimit)?.startAt
+                    delete (this.rateLimit.get(IP as string) as RateLimit)?.endAt
+                }, 5000),
+                pos: pos ? pos.uuid : undefined
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
 
             (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 5000;
-
-            setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
-
-                delete (this.rateLimit.get(IP as string) as RateLimit).startAt
-                delete (this.rateLimit.get(IP as string) as RateLimit).endAt
-
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
-
-                if (newLastRequest) {
-                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
-                } else {
-                    this.rateLimit.delete(IP as string)
-                }
-            }, 10000);
 
             const date = new Date(Date.now() + 10000);
 
@@ -204,10 +212,30 @@ export default class API extends Module {
             console.log("SETTING RATE LIMIT 2", rateLimit)
             const reqUuid = uuid();
 
+            const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
+
+            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
                 uuid: reqUuid,
-                date: Date.now()
+                date: Date.now(),
+                timeout: setTimeout(() => {
+
+                    const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
+
+                    if (findNow.pos) {
+                        const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
+
+                        if (findPos) {
+                            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = findPos.date;
+                        } else {
+                            this.rateLimit.delete(IP as string)
+                        }
+                    }
+
+                    this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
+                }, 10000)
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
@@ -215,23 +243,11 @@ export default class API extends Module {
             (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 30000;
 
-            setTimeout(() => {
+            (this.rateLimit.get(IP as string) as RateLimit).timeout = setTimeout(() => {
                 delete (this.rateLimit.get(IP as string) as RateLimit).startAt
 
                 delete (this.rateLimit.get(IP as string) as RateLimit).endAt
             }, 30000)
-
-            setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
-
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
-
-                if (newLastRequest) {
-                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
-                } else {
-                    this.rateLimit.delete(IP as string)
-                }
-            }, 7000)
 
             const date = new Date(Date.now() + 30000);
 
@@ -242,28 +258,35 @@ export default class API extends Module {
                 duration: '30s'
             });
         } else {
+
             const reqUuid = uuid();
+
+            const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
+
+            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
                 uuid: reqUuid,
-                date: Date.now()
+                date: Date.now(),
+                timeout: setTimeout(() => {
+                    const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
+
+                    if (findNow.pos) {
+                        const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
+
+                        if (findPos) {
+                            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = findPos.date;
+                        } else {
+                            this.rateLimit.delete(IP as string)
+                        }
+                    };
+
+                    this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
+                }, 10000),
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
-
-            setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
-
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
-
-                if (newLastRequest) {
-                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
-                } else {
-                    this.rateLimit.delete(IP as string)
-                }
-            }, 7000)
-
         }
 
         next();

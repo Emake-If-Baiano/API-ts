@@ -9,4 +9,6 @@ export default interface RateLimit {
     startAt?: number
     endAt?: number;
     lastRequestDate?: number
+    timeout?: NodeJS.Timeout;
+    pos?: string
 }
