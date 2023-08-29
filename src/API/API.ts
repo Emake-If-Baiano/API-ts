@@ -65,7 +65,7 @@ export default class API extends Module {
 
             const routeInstance = new Route(this.client) as Route;
 
-            this.client.log(`Rota ${routeInstance.name} carregada.`, { tags: ['ROTAS'], color: 'cyan' });
+            this.client.log(`Rota ${routeInstance.name} carregada.`, { tags: ['ROTAS'], color: 'orange' });
 
             (app as any)[routeInstance.method](routeInstance.path, async (req: Request, res: Response, next: NextFunction) => {
                 try {
@@ -97,7 +97,7 @@ export default class API extends Module {
         const PORT = 25500;
 
         server.listen(PORT, () => {
-            this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'purple' });
+            this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'green' });
         });
 
         this.loadRoutes();
@@ -224,6 +224,7 @@ export default class API extends Module {
 
                 delete (this.rateLimit.get(IP as string) as RateLimit).endAt
             }, 30000)
+
             setTimeout(() => {
                 this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
 
