@@ -173,6 +173,8 @@ export default class API extends Module {
                 date: Date.now()
             });
 
+            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
+
             (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 5000;
 
@@ -195,6 +197,8 @@ export default class API extends Module {
                 uuid: uuid(),
                 date: Date.now()
             });
+
+            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
 
             (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 30000;
