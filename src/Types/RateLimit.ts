@@ -1,13 +1,11 @@
+import { Collection } from "@discordjs/collection";
 import { Request } from "express";
 
-interface RequestData {
-    req: Request;
-    uuid: string
-    date: number
-}
+import RequestData from "./RequestData";
+
 export default interface RateLimit {
     ip: string;
-    requests: RequestData[]
+    requests: Collection<string, RequestData>
     startAt?: number
     endAt?: number;
     lastRequestDate?: number

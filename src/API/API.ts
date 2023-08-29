@@ -8,21 +8,15 @@ import https from "https";
 
 import fs from "fs";
 
-import { load } from "cheerio";
-
 import { Collection } from "@discordjs/collection";
-
-import axios from "axios";
-
-import { XMLParser } from "fast-xml-parser";
 
 import { v4 as uuid } from "uuid";
 
 import Client from "../client/Client";
 
-import { CustomBrowser, Message, Module, NotificationData, RssItem, User, NotificationMessaging, RateLimit } from "../Types";
+import { CustomBrowser, Module, NotificationData, User, RateLimit, RequestData } from "../Types";
 
-import { ElementHandle } from "puppeteer";
+import chalk from "chalk";
 
 import { WithId } from "mongodb";
 import Route from "../Structures/Route";
@@ -65,7 +59,7 @@ export default class API extends Module {
 
             const routeInstance = new Route(this.client) as Route;
 
-            this.client.log(`Rota ${routeInstance.name} carregada.`, { tags: ['ROTAS'], color: 'orange' });
+            this.client.log(`Rota ${routeInstance.name} carregada.`, { tags: ['ROTAS'], color: 'magenta' });
 
             (app as any)[routeInstance.method](routeInstance.path, async (req: Request, res: Response, next: NextFunction) => {
                 try {
@@ -135,18 +129,18 @@ export default class API extends Module {
 
             this.rateLimit.set(IP as string, {
                 ip: IP as string,
-                requests: [{
+                requests: new Collection<string, RequestData>().set(reqUuid, {
                     req,
                     uuid: reqUuid,
                     date: Date.now()
-                }],
+                }),
                 lastRequestDate: Date.now()
             });
 
             setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
+                this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
 
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests[(this.rateLimit.get(IP as string)?.requests.length as any) - 1];
+                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
 
                 if (newLastRequest) {
                     (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
@@ -170,7 +164,7 @@ export default class API extends Module {
         if (Date.now() - (rateLimit.lastRequestDate as number) < 1800) {
             const reqUuid = uuid();
 
-            this.rateLimit.get(IP as string)?.requests.push({
+            this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
                 uuid: reqUuid,
                 date: Date.now()
@@ -182,12 +176,12 @@ export default class API extends Module {
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 5000;
 
             setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
+                this.rateLimit.get(IP as string)?.requests.delete(reqUuid);
 
                 delete (this.rateLimit.get(IP as string) as RateLimit).startAt
                 delete (this.rateLimit.get(IP as string) as RateLimit).endAt
 
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests[(this.rateLimit.get(IP as string)?.requests.length as any) - 1];
+                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
 
                 if (newLastRequest) {
                     (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
@@ -205,10 +199,10 @@ export default class API extends Module {
             });
         }
 
-        if (rateLimit.requests.length >= 10) {
+        if (rateLimit.requests.size >= 10) {
             const reqUuid = uuid();
 
-            this.rateLimit.get(IP as string)?.requests.push({
+            this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
                 uuid: reqUuid,
                 date: Date.now()
@@ -226,9 +220,9 @@ export default class API extends Module {
             }, 30000)
 
             setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
+                this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
 
-                const newLastRequest = this.rateLimit.get(IP as string)?.requests[(this.rateLimit.get(IP as string)?.requests.length as any) - 1];
+                const newLastRequest = this.rateLimit.get(IP as string)?.requests.last();
 
                 if (newLastRequest) {
                     (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
@@ -246,9 +240,11 @@ export default class API extends Module {
                 duration: '30s'
             });
         } else {
-            this.rateLimit.get(IP as string)?.requests.push({
+            const reqUuid = uuid();
+
+            this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
-                uuid: uuid(),
+                uuid: reqUuid,
                 date: Date.now()
             });
 

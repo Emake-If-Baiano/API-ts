@@ -28,6 +28,8 @@ import NotificationMessaging from "./NotificationMessaging";
 
 import RateLimit from "./RateLimit";
 
+import RequestData from "./RequestData";
+
 export {
     Module,
     CustomBrowser,
@@ -43,5 +45,6 @@ export {
     RssItem,
     NotificationData,
     NotificationMessaging,
-    RateLimit
+    RateLimit,
+    RequestData
 }
