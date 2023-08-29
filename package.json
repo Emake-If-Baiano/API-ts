@@ -1,0 +1,34 @@
+{
+  "name": "emake-api",
+  "version": "1.0.0",
+  "description": "API OFICIAL DO APLICATIVO EMAKE",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsc"
+  },
+  "keywords": [],
+  "author": "Paulo Valadares",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/collection": "^1.5.3",
+    "axios": "^1.4.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fast-xml-parser": "^4.2.5",
+    "firebase": "^8.10.0",
+    "firebase-admin": "^11.8.0",
+    "mongodb": "^5.8.1",
+    "node-cron": "^3.0.2",
+    "puppeteer": "^21.1.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.197",
+    "@types/node": "^20.5.6",
+    "@types/node-cron": "^3.0.8",
+    "@types/uuid": "^9.0.2",
+    "typescript": "^5.2.2"
+  }
+}
