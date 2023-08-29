@@ -154,7 +154,7 @@ export default class API extends Module {
                     this.rateLimit.delete(IP as string)
                 }
             }, 15000)
-            return next();
+            return next()
         }
 
         if (rateLimit.endAt) {
