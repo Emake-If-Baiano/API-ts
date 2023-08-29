@@ -22,7 +22,7 @@ export default abstract class Route {
             res.status(500).send({
                 status: false,
                 message: 'Internal Server Error'
-            })
+            }).end();
         }, this.client.REQUEST_TIMEOUT_MS)
     };
 

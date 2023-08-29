@@ -68,7 +68,7 @@ export default class API extends Module {
                     res.status(500).send({
                         status: false,
                         error: (err as Error).message
-                    })
+                    }).end();
                 }
             })
         }
@@ -88,7 +88,7 @@ export default class API extends Module {
             cert: fs.readFileSync('/home/container/cert.pem')
         }, app);
 
-        const PORT = 25500;
+        const PORT = 25502;
 
         server.listen(PORT, () => {
             this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'green' });
@@ -98,13 +98,13 @@ export default class API extends Module {
     }
 
     async startLaunchers(): Promise<void> {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
             this.launchers.set(i, {
                 key: i,
                 requests: 0,
                 launch: await puppeteer.launch({
-                    headless: 'new',
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process'],
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process']
                 }).then(e => {
 
                     this.client.log(`Puppeteer ${i} iniciado com sucesso`, { tags: ['Puppeteer'], color: 'green' });
@@ -167,7 +167,7 @@ export default class API extends Module {
 
             const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
 
-            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+            if (pos && pos.uuid) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
@@ -176,7 +176,7 @@ export default class API extends Module {
                 timeout: setTimeout(() => {
                     const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
 
-                    if (findNow.pos) {
+                    if (findNow && findNow.pos) {
                         const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
 
                         if (findPos) {
@@ -190,8 +190,7 @@ export default class API extends Module {
 
                     delete (this.rateLimit.get(IP as string) as RateLimit)?.startAt
                     delete (this.rateLimit.get(IP as string) as RateLimit)?.endAt
-                }, 5000),
-                pos: pos ? pos.uuid : undefined
+                }, 5000)
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
@@ -208,13 +207,13 @@ export default class API extends Module {
             });
         }
 
-        if (rateLimit.requests.size >= 10) {
+        if (rateLimit.requests.size >= 100) {
             console.log("SETTING RATE LIMIT 2", rateLimit)
             const reqUuid = uuid();
 
             const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
 
-            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+            if (pos && pos.uuid) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
@@ -224,7 +223,7 @@ export default class API extends Module {
 
                     const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
 
-                    if (findNow.pos) {
+                    if (findNow && findNow.pos) {
                         const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
 
                         if (findPos) {
@@ -235,7 +234,7 @@ export default class API extends Module {
                     }
 
                     this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
-                }, 10000)
+                }, 20000)
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
@@ -263,7 +262,10 @@ export default class API extends Module {
 
             const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
 
-            if (pos) ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+            if (pos && pos.uuid) {
+                console.log("EXSISTS POS");
+                ((this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData).pos = reqUuid;
+            }
 
             this.rateLimit.get(IP as string)?.requests.set(reqUuid, {
                 req,
@@ -272,21 +274,63 @@ export default class API extends Module {
                 timeout: setTimeout(() => {
                     const findNow = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === reqUuid) as RequestData;
 
-                    if (findNow.pos) {
+                    if (findNow && findNow.pos) {
                         const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
 
-                        if (findPos) {
+                        if (findPos.uuid) {
+                            console.log(this.rateLimit.get(IP as string)?.requests.size);
                             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = findPos.date;
                         } else {
+                            console.log("SEM FUTURO KKKKK")
                             this.rateLimit.delete(IP as string)
                         }
-                    };
+                    }
 
                     this.rateLimit.get(IP as string)?.requests.delete(reqUuid)
-                }, 10000),
+                }, 20000),
             });
 
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
+        }
+
+        const ARRAY_INTERVAL = [];
+
+        const requests = this.rateLimit.get(IP as string)?.requests.map(r => r.date) as number[];
+
+        for (let i = 0; i < requests.length; i++) {
+            const now = requests[i];
+
+            const next = requests[i + 1];
+
+            if (next) {
+                if (next > now) ARRAY_INTERVAL.push(next - now);
+
+                if (next < now) ARRAY_INTERVAL.push(now - next);
+            }
+        };
+
+        const MEDIA = ARRAY_INTERVAL.reduce((a, b) => a + b, 0) / ARRAY_INTERVAL.length;
+
+        if (requests.length >= 5 && MEDIA < 5000) {
+            (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
+
+            (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();
+            (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 30000;
+
+            (this.rateLimit.get(IP as string) as RateLimit).timeout = setTimeout(() => {
+                delete (this.rateLimit.get(IP as string) as RateLimit).startAt
+
+                delete (this.rateLimit.get(IP as string) as RateLimit).endAt
+            }, 30000)
+
+            const date = new Date(Date.now() + 30000);
+
+            return res.status(429).send({
+                status: false,
+                error: "Você foi bloqueado de acessar as rotas da API (RATE LIMIT)",
+                endAt: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`,
+                duration: '30s'
+            });
         }
 
         next();

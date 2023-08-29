@@ -16,7 +16,7 @@ export default class Notas extends Route {
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
         const timer = await this.createTimer(res);
-
+        console.log("UAI?")
         const { user, password, ano, periodo, codigo } = req.query as {
             user: string,
             password: string,
@@ -24,14 +24,16 @@ export default class Notas extends Route {
             periodo: string,
             codigo: string
         }
-
+        console.log("KAPA")
         const launch = this.client.API.launch;
 
         (this.client.API.launchers.get(launch.key) as CustomBrowser).requests++
 
         const initialPage = await launch.launch.newPage();
 
-        await initialPage.goto('https://suap.ifbaiano.edu.br/accounts/login/');
+        await initialPage.goto('https://suap.ifbaiano.edu.br/accounts/login/').catch(err => {
+            initialPage.screenshot({ path: 'example-catch.png' });
+        })
 
         await initialPage.waitForSelector('#id_username');
 
@@ -40,6 +42,8 @@ export default class Notas extends Route {
         await initialPage.type(".password-input", password)
 
         await initialPage.click("body > div.holder > main > div > div:nth-child(1) > form > div.submit-row > input");
+
+        await initialPage.screenshot({ path: 'example.png' });
 
         await initialPage.waitForSelector("body > div > a.toggleSidebar");
 
@@ -88,6 +92,7 @@ export default class Notas extends Route {
         initialPage.close();
 
         (this.client.API.launchers.get(launch.key) as CustomBrowser).requests--;
+
         return res.send({
             Professores: teachers.trim(),
             "Detalhamento das Notas": this.zipObject(titles, data)

@@ -47,7 +47,7 @@ export default class Client {
 
         this.version = 2;
 
-        this.REQUEST_TIMEOUT_MS = 30000;
+        this.REQUEST_TIMEOUT_MS = 15000;
     }
 
     log(
