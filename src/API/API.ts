@@ -85,17 +85,13 @@ export default class API extends Module {
 
         this.startLaunchers();
 
-        app.all('*', this.secureRedirect);
-
         app.all('*', (req: Request, res: Response, next: NextFunction) => {
             this.checkRateLimit(req, res, next);
         });
 
         const server = https.createServer({
-            key: fs.readFileSync('key.pem'),
-            cert: fs.readFileSync('cert.pem')
-            // key: fs.readFileSync('/home/container/key.pem'),
-            // cert: fs.readFileSync('/home/container/cert.pem')
+            key: fs.readFileSync('/home/container/key.pem'),
+            cert: fs.readFileSync('/home/container/cert.pem')
         }, app);
 
         const PORT = 25500;
@@ -114,7 +110,7 @@ export default class API extends Module {
                 requests: 0,
                 launch: await puppeteer.launch({
                     headless: 'new',
-                    executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process'],
                 }).then(e => {
 
                     this.client.log(`Puppeteer ${i} iniciado com sucesso`, { tags: ['Puppeteer'], color: 'green' });
@@ -123,11 +119,6 @@ export default class API extends Module {
             })
         };
     }
-
-    secureRedirect(req: any, res: Response, next: NextFunction): void {
-        if (!req.secure) return res.redirect("https://" + req.hostname + req.uri)
-        next()
-    };
 
     checkRateLimit(req: Request, res: Response, next: NextFunction): Response | void {
         const IP = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -175,7 +166,7 @@ export default class API extends Module {
             })
         };
 
-        if (Date.now() - (rateLimit.lastRequestDate as number) < 1000) {
+        if (Date.now() - (rateLimit.lastRequestDate as number) < 1800) {
             this.rateLimit.get(IP as string)?.requests.push({
                 req,
                 uuid: uuid(),
