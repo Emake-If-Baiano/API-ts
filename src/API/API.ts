@@ -123,7 +123,6 @@ export default class API extends Module {
     checkRateLimit(req: Request, res: Response, next: NextFunction): Response | void {
         const IP = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
 
-        console.log(IP)
         if (!IP) return res.status(500).send({
             status: false,
             error: "IP não encontrado"
@@ -169,9 +168,11 @@ export default class API extends Module {
         };
 
         if (Date.now() - (rateLimit.lastRequestDate as number) < 1800) {
+            const reqUuid = uuid();
+
             this.rateLimit.get(IP as string)?.requests.push({
                 req,
-                uuid: uuid(),
+                uuid: reqUuid,
                 date: Date.now()
             });
 
@@ -181,7 +182,7 @@ export default class API extends Module {
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 5000;
 
             setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.shift();
+                this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
 
                 delete (this.rateLimit.get(IP as string) as RateLimit).startAt
                 delete (this.rateLimit.get(IP as string) as RateLimit).endAt
