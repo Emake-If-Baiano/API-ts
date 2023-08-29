@@ -97,7 +97,7 @@ export default class API extends Module {
         const PORT = 25500;
 
         server.listen(PORT, () => {
-            this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'cyan' });
+            this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'purple' });
         });
 
         this.loadRoutes();
@@ -220,6 +220,11 @@ export default class API extends Module {
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 30000;
 
             setTimeout(() => {
+                delete (this.rateLimit.get(IP as string) as RateLimit).startAt
+
+                delete (this.rateLimit.get(IP as string) as RateLimit).endAt
+            }, 30000)
+            setTimeout(() => {
                 this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
 
                 const newLastRequest = this.rateLimit.get(IP as string)?.requests[(this.rateLimit.get(IP as string)?.requests.length as any) - 1];
@@ -231,12 +236,13 @@ export default class API extends Module {
                 }
             }, 7000)
 
-            const date = new Date(Date.now() + 15000);
+            const date = new Date(Date.now() + 30000);
 
             return res.status(429).send({
                 status: false,
                 error: "Você foi bloqueado de acessar as rotas da API (RATE LIMIT)",
-                endAt: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+                endAt: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`,
+                duration: '30s'
             });
         } else {
             this.rateLimit.get(IP as string)?.requests.push({
