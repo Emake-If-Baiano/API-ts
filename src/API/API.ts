@@ -200,9 +200,11 @@ export default class API extends Module {
         }
 
         if (rateLimit.requests.length >= 10) {
+            const reqUuid = uuid();
+
             this.rateLimit.get(IP as string)?.requests.push({
                 req,
-                uuid: uuid(),
+                uuid: reqUuid,
                 date: Date.now()
             });
 
@@ -212,11 +214,20 @@ export default class API extends Module {
             (this.rateLimit.get(IP as string) as RateLimit).endAt = Date.now() + 30000;
 
             setTimeout(() => {
-                this.rateLimit.get(IP as string)?.requests.shift();
-
-                delete (this.rateLimit.get(IP as string) as RateLimit).startAt
-                delete (this.rateLimit.get(IP as string) as RateLimit).endAt
+                this.rateLimit.delete(IP as string)
             }, 15000);
+
+            setTimeout(() => {
+                this.rateLimit.get(IP as string)?.requests.splice(this.rateLimit.get(IP as string)?.requests.findIndex(e => e.uuid === reqUuid) as any, 1);
+
+                const newLastRequest = this.rateLimit.get(IP as string)?.requests[(this.rateLimit.get(IP as string)?.requests.length as any) - 1];
+
+                if (newLastRequest) {
+                    (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = newLastRequest.date;
+                } else {
+                    this.rateLimit.delete(IP as string)
+                }
+            }, 7000)
 
             return res.status(429).send({
                 status: false,
