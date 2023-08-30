@@ -15,7 +15,7 @@ export default class UpdateConfig extends Route {
 
         this.requiredAuth = true;
 
-        this.timeout = 0;
+        this.timeout = 1;
     }
 
     async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
