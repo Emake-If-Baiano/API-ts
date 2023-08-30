@@ -10,6 +10,8 @@ export default class Version extends Route {
         super('/version', 'get', client);
 
         this.name = 'version';
+
+        this.timeout = 0;
     }
 
     async execute(req: Request, res: Response): Promise<Response> {

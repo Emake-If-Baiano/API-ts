@@ -12,6 +12,8 @@ export default abstract class Route {
 
     requiredAuth?: boolean;
 
+    timeout?: number;
+
     constructor(path: string, method: string, client: Client) {
         this.path = path;
         this.method = method;

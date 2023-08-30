@@ -14,6 +14,8 @@ export default class Campus extends Route {
         super('/campus', 'get', client);
 
         this.name = 'campus';
+
+        this.timeout = 100;
     }
 
     async execute(req: Request, res: Response): Promise<Response> {

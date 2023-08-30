@@ -14,6 +14,8 @@ export default class Config extends Route {
         this.name = 'config';
 
         this.requiredAuth = true;
+
+        this.timeout = 100;
     }
 
     async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {

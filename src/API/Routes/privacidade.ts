@@ -8,11 +8,12 @@ import { readFileSync } from "fs";
 
 export default class Privacidade extends Route {
     name: string;
-
     constructor(client: Client) {
         super('/privacidade', 'get', client);
 
         this.name = 'privacidade';
+
+        this.timeout = 0;
     }
 
     async execute(req: Request, res: Response): Promise<Response> {
