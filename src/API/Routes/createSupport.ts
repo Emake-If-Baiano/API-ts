@@ -14,6 +14,8 @@ export default class CreateSupport extends Route {
         super('/createSupport', 'post', client);
 
         this.name = 'createSupport';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

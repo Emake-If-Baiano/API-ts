@@ -12,6 +12,8 @@ export default class Notificacoes extends Route {
         super('/notificacoes', 'get', client);
 
         this.name = 'notificacoes';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

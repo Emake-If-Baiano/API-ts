@@ -14,6 +14,8 @@ export default class CloseTicket extends Route {
         super('/closeTicket', 'post', client);
 
         this.name = 'closeTicket';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

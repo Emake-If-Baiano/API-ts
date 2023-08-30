@@ -10,6 +10,8 @@ export default class Config extends Route {
         super('/config', 'get', client);
 
         this.name = 'config';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

@@ -11,6 +11,8 @@ export default class Messages extends Route {
         super('/messages', 'get', client);
 
         this.name = 'messages';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

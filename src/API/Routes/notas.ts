@@ -12,6 +12,8 @@ export default class Notas extends Route {
         super('/notas', 'get', client);
 
         this.name = 'notas';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

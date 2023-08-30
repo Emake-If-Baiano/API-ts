@@ -14,6 +14,8 @@ export default class postMessage extends Route {
         super('/postMessage', 'post', client);
 
         this.name = 'postMessage';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

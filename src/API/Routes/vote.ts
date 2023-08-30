@@ -14,6 +14,8 @@ export default class Vote extends Route {
         super('/vote', 'post', client);
 
         this.name = 'vote';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

@@ -10,6 +10,8 @@ export default class UpdateConfig extends Route {
         super('/updateConfig', 'get', client);
 
         this.name = 'updateConfig';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

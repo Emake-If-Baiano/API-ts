@@ -12,6 +12,8 @@ export default class Version extends Route {
         super('/postToken', 'post', client);
 
         this.name = 'postToken';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

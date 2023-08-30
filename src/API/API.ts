@@ -35,6 +35,8 @@ export default class API extends Module {
 
     rateLimit: Collection<string, RateLimit>;
 
+    routes: Collection<string, Route>
+
     constructor(client: Client) {
         super(client);
 
@@ -45,6 +47,8 @@ export default class API extends Module {
         this.launchers = new Collection();
 
         this.rateLimit = new Collection();
+
+        this.routes = new Collection();
     }
 
     get launch(): CustomBrowser {
@@ -58,6 +62,8 @@ export default class API extends Module {
             const Route = require(`./Routes/${route}`).default;
 
             const routeInstance = new Route(this.client) as Route;
+
+            this.routes.set(routeInstance.path, routeInstance)
 
             this.client.log(`Rota ${routeInstance.name} carregada.`, { tags: ['ROTAS'], color: 'magenta' });
 
@@ -73,6 +79,48 @@ export default class API extends Module {
             })
         }
     }
+
+    async handleRequest(req: Request, res: Response, next: NextFunction): Promise<any> {
+        const route = this.client.API.routes.get(req.path);
+
+        if (!route) return res.status(404).send({
+            status: false,
+            error: "Rota não encontrada"
+        }).end();
+
+        if (route.method.toLowerCase() !== req.method.toLowerCase()) return res.status(405).send({
+            status: false,
+            error: "Método não permitido"
+        }).end();
+
+        if (route.requiredAuth) {
+            const { user, password } = req.query as {
+                user: string,
+                password: string
+            };
+
+            if (!user || !password) return res.status(400).send({
+                status: false,
+                error: "Credenciais não encontradas"
+            }).end();
+
+            const find = await this.client.mongo.db("EMAKE").collection("users").findOne({ user: user.toLowerCase(), password });
+
+            if (!find) {
+                this.checkRateLimit(req, res, () => {
+                    res.status(401).send({
+                        status: false,
+                        error: "Credenciais inválidas"
+                    }).end();
+                }, true)
+            } else {
+                this.checkRateLimit(req, res, next, false)
+            }
+        } else {
+            this.checkRateLimit(req, res, next, true)
+        }
+    };
+
     async start(): Promise<void> {
 
         this.client.API = this;
@@ -80,7 +128,7 @@ export default class API extends Module {
         this.startLaunchers();
 
         app.all('*', (req: Request, res: Response, next: NextFunction) => {
-            this.checkRateLimit(req, res, next);
+            this.handleRequest(req, res, next);
         });
 
         const server = https.createServer({
@@ -88,7 +136,7 @@ export default class API extends Module {
             cert: fs.readFileSync('/home/container/cert.pem')
         }, app);
 
-        const PORT = 25502;
+        const PORT = process.env.PORT
 
         server.listen(PORT, () => {
             this.client.log(`API iniciada na porta ${PORT}`, { tags: ['API'], color: 'green' });
@@ -114,8 +162,8 @@ export default class API extends Module {
         };
     }
 
-    checkRateLimit(req: Request, res: Response, next: NextFunction): Response | void {
-        const IP = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+    checkRateLimit(req: Request, res: Response, next: NextFunction, useIP: boolean): Response | void {
+        const IP = useIP ? req.headers['x-forwarded-for'] || req.socket.remoteAddress || null : (req.query.user as string).toLocaleLowerCase();
 
         if (!IP) return res.status(500).send({
             status: false,
@@ -125,7 +173,6 @@ export default class API extends Module {
         const rateLimit = this.rateLimit.get(IP as string) as RateLimit;
 
         if (!rateLimit) {
-            console.log("SEM RATE LIMIT")
             const reqUuid = uuid();
 
             this.rateLimit.set(IP as string, {
@@ -161,7 +208,7 @@ export default class API extends Module {
             })
         };
 
-        if (Date.now() - (rateLimit.lastRequestDate as number) < 1800) {
+        if (Date.now() - (rateLimit.lastRequestDate as number) < (useIP ? 1800 : 1000)) {
             console.log("SETTING RATE LIMIT 1", rateLimit)
             const reqUuid = uuid();
 
@@ -277,7 +324,7 @@ export default class API extends Module {
                     if (findNow && findNow.pos) {
                         const findPos = this.rateLimit.get(IP as string)?.requests.find(e => e.uuid === findNow.pos) as RequestData;
 
-                        if (findPos.uuid) {
+                        if (findPos && findPos.uuid) {
                             console.log(this.rateLimit.get(IP as string)?.requests.size);
                             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = findPos.date;
                         } else {
@@ -336,38 +383,37 @@ export default class API extends Module {
         next();
     }
 
+
     async postNotification({ user, title, body, data }: {
         user: WithId<User> | User,
         title: string,
         body: string,
         data?: NotificationData
-    }): Promise<boolean> {
-        return true;
+    }): Promise<any> {
+        user.user = user.user.toLowerCase();
 
-        // user.user = user.user.toLowerCase();
+        const dbUSER = await this.client.mongo.db("EMAKE").collection("users").findOne({ user: user.user })
 
-        // const dbUSER = await this.client.mongo.db("EMAKE").collection("users").findOne({ user: user.user })
+        if (!dbUSER) return console.log("AUHSDUHASUDH", user);
 
-        // if (!dbUSER) return console.log("AUHSDUHASUDH", user);
+        if (!dbUSER.postToken) return console.log("YEAYSYEDSYADY", user)
 
-        // if (!dbUSER.postToken) return console.log("YEAYSYEDSYADY", user)
+        const message = {
+            notification: {
+                title,
+                body,
+            },
+            token: dbUSER.postToken,
+            data: data
+        } as admin.messaging.Message;
 
-        // const message = {
-        //     notification: {
-        //         title,
-        //         body,
-        //     },
-        //     token: dbUSER.postToken,
-        //     data: data
-        // } as admin.messaging.Message;
+        return admin.messaging().send(message)
+            .then(() => {
+                this.client.log(`Mensagem enviada com sucesso para ${dbUSER.user}`, { tags: ['NOTIFICAÇÕES'], color: 'yellow' });
+            })
+            .catch(() => {
+                this.client.log(`Não foi possível enviar mensagem para ${dbUSER.user}`, { tags: ['NOTIFICAÇÕES'], color: 'red' });
 
-        // return admin.messaging().send(message)
-        //     .then(() => {
-        //         this.client.log(`Mensagem enviada com sucesso para ${dbUSER.user}`, { tags: ['NOTIFICAÇÕES'], color: 'yellow' });
-        //     })
-        //     .catch(() => {
-        //         this.client.log(`Não foi possível enviar mensagem para ${dbUSER.user}`, { tags: ['NOTIFICAÇÕES'], color: 'red' });
-
-        //     });
+            });
     }
 }

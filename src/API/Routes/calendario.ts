@@ -13,6 +13,8 @@ export default class Calendario extends Route {
         super('/calendario', 'get', client);
 
         this.name = 'calendario';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {

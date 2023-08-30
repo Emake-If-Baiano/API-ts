@@ -12,6 +12,8 @@ export default class Docs extends Route {
         super('/docs', 'get', client);
 
         this.name = 'docs';
+
+        this.requiredAuth = true;
     }
 
     async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
