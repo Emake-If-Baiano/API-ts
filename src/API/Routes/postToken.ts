@@ -16,16 +16,14 @@ export default class Version extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response, User?: WithId<User>): Promise<Response> {
         let { user, password, token } = req.body;
 
         user = user.toLowerCase();
 
         const Users = this.client.mongo.db("EMAKE").collection("users");
 
-        const checkExists = await Users.findOne({ user, password });
-
-        let u = checkExists as WithId<User> || await Users.insertOne({
+        let u = User as WithId<User> || await Users.insertOne({
             user,
             password,
             postToken: token,
@@ -38,7 +36,7 @@ export default class Version extends Route {
             status: true
         });
 
-        if (checkExists) {
+        if (User) {
             (u).postToken = token;
 
             Users.updateOne({ user, password }, {

@@ -18,29 +18,21 @@ export default class CreateSupport extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
-        let { user, password, name, iconURL } = req.query as {
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
+        let { name, iconURL } = req.query as {
             user: string,
             password: string,
             name: string,
             iconURL: string
         }
 
-        user = user.toLowerCase();
-
         const Users = this.client.mongo.db("EMAKE").collection("users");
 
-        const checkExists = await Users.findOne({ user, password }) as WithId<User>;
-
-        if (!checkExists) return res.send({
-            status: false
-        });
-
-        if (checkExists.support) return res.send({
+        if (User.support) return res.send({
             status: true
         })
 
-        Users.updateOne({ user, password }, { $set: { support: true, name, iconURL } });
+        Users.updateOne({ user: User.password, password: User.password }, { $set: { support: true, name, iconURL } });
 
         const botMessages = ["Olá! Seja bem-vindo ao suporte da EMAKE. Aqui você poderá tirar todas as suas dúvidas a respeito do APP, fazer reporte de erros ou sugestões do nosso app.", 'Fique á vontade para deixar especificado a sua mensagem, para que o atendimento seja mais rápido.', 'Em breve um membro de nosso suporte irá atendê-lo.'];
 
@@ -50,25 +42,23 @@ export default class CreateSupport extends Route {
             this.client.API.postNotification({
                 user: admin,
                 title: `Novo atendimento aberto`,
-                body: `${name} abriu um atendimento. (${checkExists.user})`
+                body: `${name} abriu um atendimento. (${User.user})`
             })
         }
         for (let i = 0; i < botMessages.length; i++) {
             setTimeout(async () => {
-                const now = await Users.findOne({ user, password }) as WithId<User>
+                if (!User.messages) User.messages = [];
 
-                if (!now.messages) now.messages = [];
+                User.messages.push({ content: botMessages[i], author: "EMAKE", date: Date.now(), id: uuid(), iconURL: 'https://media.discordapp.net/attachments/1091540686777634826/1144101172978921573/logo.png' });
 
-                now.messages.push({ content: botMessages[i], author: "EMAKE", date: Date.now(), id: uuid(), iconURL: 'https://media.discordapp.net/attachments/1091540686777634826/1144101172978921573/logo.png' });
-
-                Users.updateOne({ user, password }, {
+                Users.updateOne({ user: User.user, password: User.password }, {
                     $set: {
-                        messages: now.messages
+                        messages: User.messages
                     }
                 });
 
                 this.client.API.postNotification({
-                    user: checkExists,
+                    user: User,
                     title: `EMAKE respondeu ao seu atendimento`,
                     body: `EMAKE: ${botMessages[i]}`,
                     data: {
@@ -87,7 +77,7 @@ export default class CreateSupport extends Route {
                         body: 'Clique para detalhar',
                         data: {
                             content: botMessages[i],
-                            date: Date.now().toString(),
+                            date: Date.now.toString(),
                             iconURL: 'https://media.discordapp.net/attachments/1091540686777634826/1144101172978921573/logo.png',
                             author: 'EMAKE',
                             contact: name || 'EMAKE'
@@ -98,7 +88,7 @@ export default class CreateSupport extends Route {
         }
 
         return res.send({
-            messages: checkExists.messages
+            messages: User.messages
         })
     }
 }

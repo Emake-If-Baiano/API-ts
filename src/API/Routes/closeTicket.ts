@@ -18,18 +18,10 @@ export default class CloseTicket extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
-        let { user, password, contact } = req.body;
-
-        user = user.toLowerCase();
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
+        const { contact } = req.body;
 
         const Users = this.client.mongo.db("EMAKE").collection("users");
-
-        const checkExistsAuthor = await Users.findOne({ user, password }) as WithId<User>;
-
-        if (!checkExistsAuthor) return res.send({
-            status: false
-        });
 
         const checkExists = await Users.findOne({ name: contact }) as WithId<User>;
 
@@ -37,7 +29,7 @@ export default class CloseTicket extends Route {
             status: false
         });
 
-        if (contact === checkExistsAuthor.name || checkExistsAuthor.admin) {
+        if (contact === User.name || User.admin) {
             const message = "Atendimento finalizado! Esperamos ter sanado todas as suas dúvidas.";
 
             const secondMessage = "Dê uma nota ao atendimento";

@@ -12,7 +12,7 @@ export default class Version extends Route {
         this.name = 'version';
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response): Promise<Response> {
         return res.send({
             version: this.client.version
         });

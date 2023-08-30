@@ -18,22 +18,12 @@ export default class Vote extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
-        let { user, password, contact } = req.body as {
-            user: string,
-            password: string,
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
+        const { contact } = req.body as {
             contact: string,
         }
 
-        user = user.toLowerCase();
-
         const Users = this.client.mongo.db("EMAKE").collection("users");
-
-        const checkExistsAuthor = await Users.findOne({ user, password }) as WithId<User>;
-
-        if (!checkExistsAuthor) return res.send({
-            status: false
-        });
 
         const checkExists = await Users.findOne({ name: contact }) as WithId<User>;
 

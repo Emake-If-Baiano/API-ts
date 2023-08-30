@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import Route from "../../Structures/Route";
 
 import Client from "../../client/Client";
-import { Message } from "../../Types";
+import { Message, User } from "../../Types";
+import { WithId } from "mongodb";
 
 export default class Messages extends Route {
     name: string;
@@ -15,7 +16,7 @@ export default class Messages extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
         let { user, password, contact } = req.query as {
             user: string,
             password: string,
@@ -26,13 +27,7 @@ export default class Messages extends Route {
 
         const Users = this.client.mongo.db("EMAKE").collection("users");
 
-        const checkExists = await Users.findOne({ user, password });
-
-        if (!checkExists) return res.send({
-            status: false
-        });
-
-        const isAdmin = checkExists.admin;
+        const isAdmin = User.admin;
 
         if (isAdmin) {
             if (contact !== "EMAKE") {
@@ -61,7 +56,7 @@ export default class Messages extends Route {
             })
         } else {
             return res.send({
-                messages: checkExists.messages || [],
+                messages: User.messages || [],
                 isAdmin: false
             });
         }

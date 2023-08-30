@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import Client from "../client/Client";
+import { WithId } from "mongodb";
+import { User } from "../Types";
 
 export default abstract class Route {
     path: string;
@@ -17,7 +19,7 @@ export default abstract class Route {
         this.client = client;
     }
 
-    abstract execute(req: Request, res: Response, next?: NextFunction): Promise<Response>;
+    abstract execute(req: Request, res: Response, User?: WithId<User>): Promise<Response>;
 
     async createTimer(res: Response): Promise<NodeJS.Timeout> {
         return setTimeout(() => {

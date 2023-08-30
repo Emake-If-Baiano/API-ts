@@ -15,7 +15,7 @@ export default class Privacidade extends Route {
         this.name = 'privacidade';
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response): Promise<Response> {
         res.setHeader('Content-Type', 'text/html');
 
         return res.send(readFileSync('./politicas.html'))

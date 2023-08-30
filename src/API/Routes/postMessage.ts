@@ -18,18 +18,10 @@ export default class postMessage extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
-        let { user, password, message, contact } = req.body;
-
-        user = user.toLowerCase();
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
+        const { message, contact } = req.body;
 
         const Users = this.client.mongo.db("EMAKE").collection("users");
-
-        const checkExistsAuthor = await Users.findOne({ user, password });
-
-        if (!checkExistsAuthor) return res.send({
-            status: false
-        });
 
         const checkExists = await Users.findOne({ name: contact }) as WithId<User>;
 

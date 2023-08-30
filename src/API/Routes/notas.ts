@@ -16,9 +16,9 @@ export default class Notas extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response): Promise<Response> {
         const timer = await this.createTimer(res);
-        console.log("UAI?")
+
         const { user, password, ano, periodo, codigo } = req.query as {
             user: string,
             password: string,
@@ -26,16 +26,14 @@ export default class Notas extends Route {
             periodo: string,
             codigo: string
         }
-        console.log("KAPA")
+
         const launch = this.client.API.launch;
 
         (this.client.API.launchers.get(launch.key) as CustomBrowser).requests++
 
         const initialPage = await launch.launch.newPage();
 
-        await initialPage.goto('https://suap.ifbaiano.edu.br/accounts/login/').catch(err => {
-            initialPage.screenshot({ path: 'example-catch.png' });
-        })
+        await initialPage.goto('https://suap.ifbaiano.edu.br/accounts/login/')
 
         await initialPage.waitForSelector('#id_username');
 

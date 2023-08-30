@@ -69,7 +69,13 @@ export default class API extends Module {
 
             (app as any)[routeInstance.method](routeInstance.path, async (req: Request, res: Response, next: NextFunction) => {
                 try {
-                    await routeInstance.execute(req, res, next);
+                    const { user, password } = req.query as {
+                        user: string,
+                        password: string
+                    };
+                    const User = user ? await this.client.mongo.db("EMAKE").collection("users").findOne({ user: user.toLowerCase(), password }) : undefined;
+
+                    await routeInstance.execute(req, res, User as WithId<User> | undefined);
                 } catch (err) {
                     res.status(500).send({
                         status: false,
@@ -154,7 +160,6 @@ export default class API extends Module {
                     headless: true,
                     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process']
                 }).then(e => {
-
                     this.client.log(`Puppeteer ${i} iniciado com sucesso`, { tags: ['Puppeteer'], color: 'green' });
                     return e;
                 })

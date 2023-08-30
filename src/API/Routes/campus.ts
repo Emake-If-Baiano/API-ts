@@ -16,7 +16,7 @@ export default class Campus extends Route {
         this.name = 'campus';
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
+    async execute(req: Request, res: Response): Promise<Response> {
         const timer = await this.createTimer(res);
 
         const format = {

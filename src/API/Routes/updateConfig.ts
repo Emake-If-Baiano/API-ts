@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import Route from "../../Structures/Route";
 
 import Client from "../../client/Client";
+import { WithId } from "mongodb";
+import { User } from "../../Types";
 
 export default class UpdateConfig extends Route {
     name: string;
@@ -14,8 +16,8 @@ export default class UpdateConfig extends Route {
         this.requiredAuth = true;
     }
 
-    async execute(req: Request, res: Response, next?: NextFunction): Promise<Response> {
-        let { user, password, data } = req.query as {
+    async execute(req: Request, res: Response, User: WithId<User>): Promise<Response> {
+        let { data } = req.query as {
             user: string,
             password: string,
             data: any
@@ -23,29 +25,19 @@ export default class UpdateConfig extends Route {
 
         data = JSON.parse(data);
 
-        user = user.toLowerCase();
-
         const Users = this.client.mongo.db("EMAKE").collection("users");
 
-        const u = await Users.findOne({
-            user, password
-        });
+        if (data.notas) User.notas = !User.notas;
 
-        if (!u) return res.send({
-            status: false
-        });
+        if (data.faltas) User.faltas = !User.faltas;
 
-        if (data.notas) u.notas = !u.notas;
+        if (data.materiais) User.materiais = !User.materiais;
 
-        if (data.faltas) u.faltas = !u.faltas;
-
-        if (data.materiais) u.materiais = !u.materiais;
-
-        Users.updateOne({ user, password }, {
+        Users.updateOne({ user: User.user, password: User.password }, {
             $set: {
-                notas: u.notas,
-                faltas: u.faltas,
-                materiais: u.materiais
+                notas: User.notas,
+                faltas: User.faltas,
+                materiais: User.materiais
             }
         })
 
