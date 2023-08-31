@@ -216,7 +216,7 @@ export default class API extends Module {
         };
 
         if (Date.now() - (rateLimit.lastRequestDate as number) < (useIP ? 1800 : route.timeout ? route.timeout : 1000)) {
-            console.log("SETTING RATE LIMIT 1", rateLimit)
+            console.log("SETTING RATE LIMIT 1", rateLimit, route)
             const reqUuid = uuid();
 
             const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
@@ -262,7 +262,7 @@ export default class API extends Module {
         }
 
         if (rateLimit.requests.size >= 100) {
-            console.log("SETTING RATE LIMIT 2", rateLimit)
+            console.log("SETTING RATE LIMIT 2", rateLimit, route)
             const reqUuid = uuid();
 
             const pos = (this.rateLimit.get(IP as string) as RateLimit).requests.last() as RequestData
@@ -365,7 +365,9 @@ export default class API extends Module {
 
         const MEDIA = ARRAY_INTERVAL.reduce((a, b) => a + b, 0) / ARRAY_INTERVAL.length;
 
-        if (requests.length >= 5 && MEDIA < 5000) {
+        if ((useIP || !route.timeout) && requests.length >= 5 && MEDIA < 5000) {
+            console.log("SETTING RATE LIMIT 3", rateLimit, route);
+
             (this.rateLimit.get(IP as string) as RateLimit).lastRequestDate = Date.now();
 
             (this.rateLimit.get(IP as string) as RateLimit).startAt = Date.now();

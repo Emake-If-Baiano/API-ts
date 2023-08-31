@@ -216,6 +216,12 @@ export default class suapNotification extends Module {
                     if (last) {
                         last.forEach((nota: Nota) => {
 
+                            if (!nota) {
+                                notasCache.delete(user.user);
+
+                                return
+                            };
+
                             if (nota.nota_etapa_1.nota != notas.find((n: Nota) => n.codigo_diario == nota.codigo_diario).nota_etapa_1.nota)
                                 this.client.API.postNotification({
                                     user,
