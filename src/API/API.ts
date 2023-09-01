@@ -158,7 +158,11 @@ export default class API extends Module {
                 requests: 0,
                 launch: await puppeteer.launch({
                     headless: true,
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process']
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process'],
+                    defaultViewport: {
+                        width: 1920,
+                        height: 1080
+                    }
                 }).then(e => {
                     this.client.log(`Puppeteer ${i} iniciado com sucesso`, { tags: ['Puppeteer'], color: 'green' });
                     return e;

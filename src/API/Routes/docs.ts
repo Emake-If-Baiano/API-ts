@@ -31,6 +31,20 @@ export default class Docs extends Route {
 
             const initialPage = await launch.launch.newPage();
 
+            initialPage.setRequestInterception(true);
+
+            initialPage.on('request', (request) => {
+                if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+                    if (request.url().includes('calendario')) {
+                        request.continue().catch(Err => true);
+                    } else {
+                        request.abort().catch(err => true)
+                    }
+                } else {
+                    request.continue().catch(err => true)
+                }
+            })
+
             await initialPage.goto('https://suap.ifbaiano.edu.br/accounts/login/');
 
             await initialPage.waitForSelector('#id_username');
