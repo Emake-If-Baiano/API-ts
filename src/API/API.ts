@@ -168,7 +168,7 @@ export default class API extends Module {
     }
 
     checkRateLimit(req: Request, res: Response, next: NextFunction, useIP: boolean): Response | void {
-        const IP = useIP ? req.headers['x-forwarded-for'] || req.socket.remoteAddress || null : (req.query.user as string).toLocaleLowerCase();
+        const IP = useIP ? req.headers['x-forwarded-for'] || req.socket.remoteAddress || null : ((req.query.user || req.body.user || '') as string).toLowerCase()
 
         const route = this.client.API.routes.get(req.path) as Route;
 
