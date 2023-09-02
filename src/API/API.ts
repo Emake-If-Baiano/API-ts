@@ -100,7 +100,7 @@ export default class API extends Module {
         }).end();
 
         if (route.requiredAuth) {
-            const { user, password } = req.query as {
+            const { user, password } = (req.query.user ? req.query : req.body) as {
                 user: string,
                 password: string
             };
@@ -158,11 +158,7 @@ export default class API extends Module {
                 requests: 0,
                 launch: await puppeteer.launch({
                     headless: true,
-                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process'],
-                    defaultViewport: {
-                        width: 1920,
-                        height: 1080
-                    }
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process']
                 }).then(e => {
                     this.client.log(`Puppeteer ${i} iniciado com sucesso`, { tags: ['Puppeteer'], color: 'green' });
                     return e;
